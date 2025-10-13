@@ -14,7 +14,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "test:e2e": "cross-env CYPRESS_BASE_URL=http://localhost:3000 cypress open --e2e",
-    "test:e2e:headless": "start-server-and-test start http://localhost:3000 \"cypress run --browser electron --headless --e2e\""
+    "test:e2e:headless": "start-server-and-test \"cross-env PORT=3200 react-scripts start\" http://localhost:3200 \"cross-env CYPRESS_BASE_URL=http://localhost:3200 cypress run --browser electron --headless --e2e\""
   },
   "eslintConfig": {
     "extends": "react-app"
