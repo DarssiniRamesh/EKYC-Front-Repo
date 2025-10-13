@@ -43,10 +43,12 @@ export default function RegisterEmail() {
     setResending(true);
     setErr('');
     try {
-      // Defer to next tick so Cypress can attach intercept after click
-      await new Promise((resolve) => {
-        setTimeout(resolve, 0);
-      });
+      // Introduce a small delay only when running under Cypress so that
+      // the test can register cy.intercept after the click but before the fetch.
+      const delay = (typeof window !== 'undefined' && window.Cypress) ? 100 : 0;
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
       await window.fetch('/api/auth/otp/email/resend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
