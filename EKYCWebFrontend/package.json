@@ -13,7 +13,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "test:e2e": "cross-env CYPRESS_BASE_URL=http://localhost:3000 cypress open --e2e",
-    "test:e2e:headless": "cross-env CYPRESS_BASE_URL=http://localhost:3000 cypress run --browser chrome --headless --e2e"
+    "test:e2e:headless": "start-server-and-test start http://localhost:3000 \"cypress run --browser electron --headless --e2e\""
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -33,6 +33,7 @@
   "devDependencies": {
     "cross-env": "^7.0.3",
     "cypress": "^13.13.1",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "start-server-and-test": "^2.0.3"
   }
 }
