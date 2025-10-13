@@ -43,6 +43,10 @@ export default function RegisterEmail() {
     setResending(true);
     setErr('');
     try {
+      // Defer to next tick so Cypress can attach intercept after click
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
       await window.fetch('/api/auth/otp/email/resend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
