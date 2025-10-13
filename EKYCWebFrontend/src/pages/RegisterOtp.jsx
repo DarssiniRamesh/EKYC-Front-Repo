@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import '../styles/register.css';
 import { getSearchParams, navigate } from '../utils/nav';
+import { apiFetch } from '../config/api';
 
 /**
  * PUBLIC_INTERFACE
@@ -41,7 +42,7 @@ export default function RegisterOtp() {
     setError('');
     setInfo('');
     try {
-      const res = await window.fetch('/api/auth/otp/mobile/verify', {
+      const res = await apiFetch('/api/auth/otp/mobile/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mobile, otp })
@@ -67,7 +68,7 @@ export default function RegisterOtp() {
     setError('');
     setInfo('');
     try {
-      await window.fetch('/api/auth/otp/mobile/send', {
+      await apiFetch('/api/auth/otp/mobile/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mobile })

@@ -6,6 +6,7 @@ import RegisterPassword from '../pages/RegisterPassword';
 import Login from '../pages/Login';
 import PasswordRecovery from '../pages/PasswordRecovery';
 import PasswordReset from '../pages/PasswordReset';
+import { pingHealth, API_BASE_URL } from '../config/api';
 
 /**
  * PUBLIC_INTERFACE
@@ -28,6 +29,14 @@ export default function Router() {
     const onPopState = () => setCurrentPath(getPath());
     window.addEventListener('popstate', onPopState);
     setCurrentPath(getPath());
+
+    // Simple connectivity check to backend; logs to console
+    (async () => {
+      const status = await pingHealth();
+      // eslint-disable-next-line no-console
+      console.log('[EKYCWebFrontend] Backend health @', API_BASE_URL, status);
+    })();
+
     return () => {
       window.removeEventListener('popstate', onPopState);
     };

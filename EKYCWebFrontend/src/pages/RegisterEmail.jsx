@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import '../styles/register.css';
+import { apiFetch } from '../config/api';
 
 /**
  * PUBLIC_INTERFACE
@@ -22,7 +23,7 @@ export default function RegisterEmail() {
     setSending(true);
     setErr('');
     try {
-      const res = await window.fetch('/api/auth/otp/email/send', {
+      const res = await apiFetch('/api/auth/otp/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -49,7 +50,7 @@ export default function RegisterEmail() {
       if (delay > 0) {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
-      await window.fetch('/api/auth/otp/email/resend', {
+      await apiFetch('/api/auth/otp/email/resend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

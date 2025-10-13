@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import '../styles/register.css';
 import { getSearchParams, navigate } from '../utils/nav';
+import { apiFetch } from '../config/api';
 
 /**
  * PUBLIC_INTERFACE
@@ -26,7 +27,7 @@ export default function PasswordReset() {
     setLoading(true);
     setErr('');
     try {
-      const res = await window.fetch('/api/auth/password/reset', {
+      const res = await apiFetch('/api/auth/password/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, otp, newPassword: pwd })

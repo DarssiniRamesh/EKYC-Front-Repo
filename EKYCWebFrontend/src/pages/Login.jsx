@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import '../styles/register.css';
 import { navigate } from '../utils/nav';
+import { apiFetch } from '../config/api';
 
 /**
  * PUBLIC_INTERFACE
@@ -21,7 +22,7 @@ export default function Login() {
     setLoading(true);
     setErr('');
     try {
-      const res = await window.fetch('/api/auth/login', {
+      const res = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier, password })

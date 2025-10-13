@@ -90,3 +90,35 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+## Backend API configuration
+
+The frontend uses a configurable API base URL for live (non-test) requests.
+
+Precedence:
+1. window.__ENV__.API_BASE_URL (injected at runtime)
+2. REACT_APP_API_BASE_URL (build-time env, e.g., in .env)
+3. Fallback: http://localhost:3001
+
+File: src/config/api.ts exports:
+- API_BASE_URL
+- apiFetch(path, init) -> wraps fetch and prefixes API_BASE_URL
+- pingHealth() -> pings /health or / to verify connectivity
+
+Example .env (do not commit secrets):
+REACT_APP_API_BASE_URL=http://localhost:3001
+
+You can also inject at runtime (e.g., in index.html before bundle):
+<script>
+  window.__ENV__ = { API_BASE_URL: 'https://api.example.com' };
+</script>
+
+Connectivity check:
+- On app start, Router logs a health check of the backend to the browser console, showing the API_BASE_URL and status.
+
+CORS:
+- Ensure the backend at http://localhost:3001 allows CORS from the frontend origin (http://localhost:3000 during dev).
+- Example Express CORS (in backend):
+  const cors = require('cors');
+  app.use(cors({ origin: '*', credentials: false }));
+  // Or restrict to specific origin: origin: 'http://localhost:3000'
