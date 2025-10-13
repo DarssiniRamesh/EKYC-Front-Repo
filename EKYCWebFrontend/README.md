@@ -2,6 +2,16 @@
 
 This project provides a minimal React template with a clean, modern UI and minimal dependencies.
 
+## Epic 126321 - Cypress E2E
+
+Initial failing tests have been added to drive TDD for Registration & Authentication (mobile/email OTP, password creation, login, validation).
+
+Scripts:
+- npm run test:e2e (interactive)
+- npm run test:e2e:headless (CI-friendly)
+
+See TESTING_Epic126321_Cypress.md for details and required data-test attributes in UI components.
+
 ## Features
 
 - **Lightweight**: No heavy UI frameworks - uses only vanilla CSS and React
