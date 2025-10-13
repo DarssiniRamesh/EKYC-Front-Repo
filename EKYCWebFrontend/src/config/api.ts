@@ -13,7 +13,7 @@ declare global {
 export const API_BASE_URL: string =
   (typeof window !== 'undefined' && window.__ENV__?.API_BASE_URL) ||
   (typeof process !== 'undefined' && process.env && (process.env.REACT_APP_API_BASE_URL as string)) ||
-  'http://localhost:3001';
+  'https://vscode-internal-36366-beta.beta01.cloud.kavia.ai:3001';
 
 // PUBLIC_INTERFACE
 export async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
