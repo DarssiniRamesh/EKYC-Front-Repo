@@ -1,66 +1,128 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import '../styles/register.css';
+import { getSearchParams, navigate } from '../utils/nav';
+import { apiFetch } from '../config/api';
 
-function useQuery() {
-  return useMemo(() => new URLSearchParams(window.location.search), []);
-}
-
+/**
+ * PUBLIC_INTERFACE
+ * RegisterOtp renders OTP entry and handles verify/resend calls.
+ * - POST /api/auth/otp/mobile/verify with { mobile, otp }
+ * - Resend uses POST /api/auth/otp/mobile/send with { mobile }
+ * On successful verification, navigates to /register/password (placeholder route).
+ */
 export default function RegisterOtp() {
-  const query = useQuery();
-  const mobile = query.get('mobile') || '';
-  const requestId = query.get('requestId') || '';
   const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  // lightweight helpers
 
-  const verify = async () => {
+  // retrieve mobile from session
+  const [mobile, setMobile] = useState('');
+  useEffect(() => {
+    const stored = window.sessionStorage.getItem('reg_mobile') || '';
+    setMobile(stored);
+  }, []);
+
+  const onlyDigits = (val) => val.replace(/\D/g, '');
+
+  const onChangeOtp = (e) => {
+    const digits = onlyDigits(e.target.value).slice(0, 6);
+    setOtp(digits);
     setError('');
-    setStatus('');
-    if (!/^\d{6}$/.test(otp)) {
-      setError('Enter 6-digit OTP');
-      return;
-    }
-    setLoading(true);
+    setInfo('');
+  };
+
+  const isValidOtp = useMemo(() => otp.length === 6, [otp]);
+
+  const verifyOtp = async () => {
+    if (!isValidOtp || verifying) return;
+    setVerifying(true);
+    setError('');
+    setInfo('');
     try {
-      const res = await fetch('/api/auth/otp/mobile/verify', {
+      const res = await apiFetch('/api/auth/otp/mobile/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile, otp, requestId }),
+        body: JSON.stringify({ mobile, otp })
       });
-      const json = await res.json();
-      if (!res.ok || !json.success || !json.verified) {
-        let msg = json.error || 'Verification failed';
-        if (res.status === 410) msg = 'OTP expired. Please resend.';
-        if (res.status === 423) msg = 'Too many attempts. Try later.';
-        setError(msg);
-        return;
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json?.error || 'Invalid OTP. Please try again.');
+      } else {
+        setInfo('OTP verified successfully.');
+        // proceed to password creation step (Cypress expects navigation)
+        navigate('/register/password');
       }
-      setStatus('Verified! Proceed to next step.');
-    } catch (e) {
-      setError(e.message);
+    } catch (err) {
+      setError('Network error, please try again');
     } finally {
-      setLoading(false);
+      setVerifying(false);
+    }
+  };
+
+  const resendOtp = async () => {
+    if (resending) return;
+    setResending(true);
+    setError('');
+    setInfo('');
+    try {
+      await apiFetch('/api/auth/otp/mobile/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile })
+      });
+      setInfo('OTP resent.');
+    } catch (err) {
+      setError('Failed to resend OTP.');
+    } finally {
+      setResending(false);
     }
   };
 
   return (
-    <div style={{ padding: 16 }}>
-      <h2>Verify OTP</h2>
-      <div>Mobile: {mobile}</div>
-      <div style={{ marginTop: 8 }}>
+    <div className="container">
+      <h1>Enter OTP</h1>
+      <p className="helper">Channel: {getSearchParams().get('channel') || 'mobile'}</p>
+      <div>
+        <label htmlFor="otp-input">One-Time Password</label>
         <input
+          id="otp-input"
+          className="input"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={6}
           value={otp}
-          onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+          onChange={onChangeOtp}
           placeholder="Enter 6-digit OTP"
+          data-test="otp-input"
         />
-        <button onClick={verify} disabled={loading}>
-          {loading ? 'Verifying…' : 'Verify'}
-        </button>
       </div>
-      {status && <div style={{ color: 'green', marginTop: 8 }}>{status}</div>}
-      {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
-      <div style={{ marginTop: 12 }}>
-        <a href="/register/mobile">Back</a>
+      {error ? <div className="error" data-test="otp-error">{error}</div> : null}
+      {info ? <div className="success" data-test="otp-info">{info}</div> : null}
+
+      <div className="actions">
+        <button
+          type="button"
+          className="button"
+          onClick={verifyOtp}
+          disabled={!isValidOtp || verifying}
+          data-test="verify-otp-btn"
+          aria-label="Verify OTP"
+        >
+          {verifying ? 'Verifying…' : 'Verify OTP'}
+        </button>
+        <button
+          type="button"
+          className="button"
+          onClick={resendOtp}
+          disabled={resending}
+          data-test="resend-otp-btn"
+          aria-label="Resend OTP"
+        >
+          {resending ? 'Resending…' : 'Resend OTP'}
+        </button>
       </div>
     </div>
   );

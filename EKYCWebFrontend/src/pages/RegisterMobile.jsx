@@ -1,78 +1,100 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
+import '../styles/register.css';
+import { navigate } from '../utils/nav';
+import { apiFetch } from '../config/api';
 
+/**
+ * PUBLIC_INTERFACE
+ * RegisterMobile renders the mobile registration input and Send OTP interaction.
+ * - Validates 10-digit mobile.
+ * - Exposes data-test attributes used by Cypress.
+ * - On success of POST /api/auth/otp/mobile/send, navigates to /register/otp?channel=mobile.
+ */
 export default function RegisterMobile() {
   const [mobile, setMobile] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [requestId, setRequestId] = useState('');
-  const [maskedMobile, setMaskedMobile] = useState('');
-  const [resendIn, setResendIn] = useState(0);
   const [error, setError] = useState('');
-  const [expiresIn, setExpiresIn] = useState(0);
+  const [sending, setSending] = useState(false);
+  // lightweight navigation without react-router
 
-  useEffect(() => {
-    let t;
-    if (resendIn > 0) {
-      t = setInterval(() => setResendIn((v) => (v > 0 ? v - 1 : 0)), 1000);
+  const onlyDigits = (val) => val.replace(/\D/g, '');
+
+  const onChange = (e) => {
+    const digits = onlyDigits(e.target.value).slice(0, 10);
+    setMobile(digits);
+    // simple error messaging
+    if (digits.length > 0 && digits.length < 10) {
+      setError('Mobile number must be 10 digits');
+    } else {
+      setError('');
     }
-    return () => clearInterval(t);
-  }, [resendIn]);
+  };
+
+  const isValid = useMemo(() => mobile.length === 10, [mobile]);
 
   const sendOtp = async () => {
+    if (!isValid || sending) return;
+    setSending(true);
     setError('');
-    if (!/^\d{10}$/.test(mobile)) {
-      setError('Enter 10 digit mobile');
-      return;
-    }
-    setLoading(true);
     try {
-      const res = await fetch('/api/auth/otp/mobile/send', {
+      const res = await apiFetch('/api/auth/otp/mobile/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile }),
+        body: JSON.stringify({ mobile })
       });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        if (res.status === 429 && json.nextAllowedIn) {
-          setResendIn(json.nextAllowedIn);
-        }
-        throw new Error(json.error || 'Failed to send OTP');
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json?.error || 'Failed to send OTP');
+      } else {
+        // persist mobile for OTP screen
+        window.sessionStorage.setItem('reg_mobile', mobile);
+        navigate('/register/otp?channel=mobile');
       }
-      setRequestId(json.requestId);
-      setMaskedMobile(json.maskedMobile);
-      setResendIn(json.nextResendIn || 60);
-      setExpiresIn(json.expiresIn || 300);
-    } catch (e) {
-      setError(e.message);
+    } catch (err) {
+      setError('Network error, please try again');
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   };
 
   return (
-    <div style={{ padding: 16 }}>
-      <h2>Register - Mobile</h2>
+    <div className="container">
+      <h1>Register - Mobile</h1>
       <div>
-        <label>Mobile (10 digits): </label>
+        <label htmlFor="mobile-input">Mobile Number</label>
         <input
+          id="mobile-input"
+          className="input"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={10}
           value={mobile}
-          onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-          placeholder="9876543210"
+          onChange={onChange}
+          aria-invalid={!!error}
+          aria-describedby="mobile-error"
+          placeholder="Enter 10-digit mobile"
+          data-test="mobile-input"
         />
-        <button onClick={sendOtp} disabled={loading || resendIn > 0}>
-          {loading ? 'Sending…' : resendIn > 0 ? `Resend in ${resendIn}s` : 'Send OTP'}
+        <div id="mobile-error" className="error" data-test="mobile-error">
+          {error}
+        </div>
+      </div>
+
+      <div className="actions">
+        <button
+          type="button"
+          className="button"
+          onClick={sendOtp}
+          disabled={!isValid || sending}
+          data-test="send-otp-btn"
+          aria-label="Send OTP"
+        >
+          {sending ? 'Sending…' : 'Send OTP'}
         </button>
       </div>
-      {requestId && (
-        <div style={{ marginTop: 8 }}>
-          OTP sent to: {maskedMobile}. Expires in ~{Math.floor(expiresIn / 60)} mins.
-        </div>
-      )}
-      {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
-      {requestId && (
-        <div style={{ marginTop: 12 }}>
-          <a href={`/register/otp?mobile=${mobile}&requestId=${requestId}`}>Enter OTP</a>
-        </div>
-      )}
+
+      <p className="helper" data-test="aadhaar-link-guidance">
+        Ensure your mobile is linked to Aadhaar to proceed. Learn how to link.
+      </p>
     </div>
   );
 }
